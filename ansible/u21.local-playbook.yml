@@ -1,0 +1,28 @@
+   - name: Playbook Backend Group
+     hosts: backend
+     become: true
+     tasks:
+
+       - name: Get service on port 19999
+         shell: netstat -tunlp | grep ":19999 " | sed -e 's/.*\///'
+         register: portcheck
+       - name: debug
+         debug: var=portcheck
+
+ 
+       - name: Install Netdata Repo
+         shell: 
+           cmd: "curl -Ss https://my-netdata.io/kickstart.sh | sudo bash" 
+         when: not portcheck.stdout
+
+       - name: Configure Service
+         systemd: 
+           name: netdata
+           state: started
+           enabled: true
+
+       - name: Permit UFW
+         ufw:
+           rule: allow
+           port: 19999
+           proto: tcp

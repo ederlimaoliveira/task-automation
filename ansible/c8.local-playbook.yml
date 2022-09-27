@@ -1,0 +1,43 @@
+  - name: Playbook For Centos - c8.local
+    hosts: frontend
+    become: true
+    tasks:
+
+    - name: Disable firewalld
+      systemd:
+        name: firewalld
+        state: stopped
+      ignore_errors: yes
+    
+    - name: Disable SElinux
+      selinux:
+        state: disabled
+      notify: selinux
+
+    - name: Nginx package
+      package:
+        name: nginx
+        state: present
+    
+    - name: Nginx Service
+      systemd:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Copy nginx config file
+      copy:
+        src: ./nginx/nginx.conf
+        dest: /etc/nginx/nginx.conf
+      notify: Restart nginx
+
+    handlers:
+
+      - name: selinux
+        reboot: 
+          msg: "reboot after disable selinux"
+          
+      - name: Restart nginx
+        systemd:
+          name: nginx
+          state: restarted
